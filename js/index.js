@@ -5,12 +5,17 @@ import { OutlineEffect } from "three/addons/effects/OutlineEffect.js";
 import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
 import { MMDAnimationHelper } from "three/addons/animation/MMDAnimationHelper.js";
 
+// Application state
 let mesh, camera, scene, renderer, effect;
 let helper;
-
+let controls;
 let ready = false;
+let isInitializing = false;
 
 const clock = new THREE.Clock();
+
+// Keep track of created blob URLs for cleanup
+const blobURLs = [];
 
 let pmxPath = [
     "model/char_model/cj/Generic_item_new.pmx",
@@ -74,6 +79,12 @@ if (params.debug) {
 
 const startButton = document.getElementById("startButton");
 startButton.addEventListener("click", function () {
+    // Prevent multiple simultaneous initializations
+    if (isInitializing) {
+        console.warn("Initialization already in progress");
+        return;
+    }
+
     Ammo().then(function () {
         if (
             document.getElementById("enable-camera").checked &&
@@ -83,6 +94,9 @@ startButton.addEventListener("click", function () {
             alert(
                 "The output from the camera perspective is not very good on mobile devices."
             );
+
+        // Clean up previous instance before starting new one
+        cleanup();
 
         if (
             document.getElementById("model").selectedIndex ==
@@ -120,12 +134,133 @@ async function LoadMMD(loader, modelFile, vmdFiles, onProgress) {
     });
 }
 
+/**
+ * Cleanup function to properly dispose of Three.js objects and prevent memory leaks
+ */
+function cleanup() {
+    console.log("Cleaning up previous scene...");
+    
+    ready = false;
+
+    // Stop animation loop
+    if (renderer) {
+        renderer.setAnimationLoop(null);
+    }
+
+    // Dispose controls
+    if (controls) {
+        controls.dispose();
+        controls = null;
+    }
+
+    // Dispose helper
+    if (helper) {
+        helper = null;
+    }
+
+    // Dispose mesh
+    if (mesh) {
+        if (mesh.geometry) {
+            mesh.geometry.dispose();
+        }
+        if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(material => disposeMaterial(material));
+            } else {
+                disposeMaterial(mesh.material);
+            }
+        }
+        if (scene) {
+            scene.remove(mesh);
+        }
+        mesh = null;
+    }
+
+    // Dispose scene
+    if (scene) {
+        scene.traverse((object) => {
+            if (object.geometry) {
+                object.geometry.dispose();
+            }
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => disposeMaterial(material));
+                } else {
+                    disposeMaterial(object.material);
+                }
+            }
+        });
+        scene = null;
+    }
+
+    // Dispose renderer
+    if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement && renderer.domElement.parentNode) {
+            renderer.domElement.parentNode.removeChild(renderer.domElement);
+        }
+        renderer = null;
+    }
+
+    // Dispose effect
+    if (effect) {
+        effect = null;
+    }
+
+    // Clean up camera
+    if (camera) {
+        camera = null;
+    }
+
+    // Revoke all blob URLs
+    blobURLs.forEach(url => {
+        URL.revokeObjectURL(url);
+    });
+    blobURLs.length = 0;
+
+    // Remove window resize listener (will be re-added in init)
+    window.removeEventListener("resize", onWindowResize);
+}
+
+/**
+ * Helper function to dispose a material and its textures
+ */
+function disposeMaterial(material) {
+    if (!material) return;
+
+    // Dispose textures
+    const textures = [
+        'map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap',
+        'envMap', 'alphaMap', 'aoMap', 'displacementMap', 'emissiveMap',
+        'gradientMap', 'metalnessMap', 'roughnessMap'
+    ];
+
+    textures.forEach(textureName => {
+        if (material[textureName]) {
+            material[textureName].dispose();
+        }
+    });
+
+    material.dispose();
+}
+
 async function customModelInit(vmd, audio, cameraFiles) {
     console.log("Custom model Initiation");
 
-    let customModel = document.getElementById("custom-model");
-    let files = customModel.files;
-    if (files.length == 0) return alert("Custom Model Not Uploaded Yet!");
+    if (isInitializing) {
+        console.warn("Already initializing");
+        return;
+    }
+
+    isInitializing = true;
+
+    try {
+        let customModel = document.getElementById("custom-model");
+        let files = customModel.files;
+        if (files.length == 0) {
+            isInitializing = false;
+            return alert("Custom Model Not Uploaded Yet!");
+        }
 
     //   let customAnimation = [];
     //   if(document.getElementById("animation").selectedIndex == document.getElementById("animation").options.length -1) {
@@ -159,7 +294,9 @@ async function customModelInit(vmd, audio, cameraFiles) {
                 e.name.toLowerCase() == url.replace("./", "")
         );
         if (find) {
-            url = URL.createObjectURL(new Blob([find]));
+            const blobURL = URL.createObjectURL(new Blob([find]));
+            blobURLs.push(blobURL); // Track blob URL for cleanup
+            url = blobURL;
         }
         console.log(url);
         return url;
@@ -346,15 +483,32 @@ async function customModelInit(vmd, audio, cameraFiles) {
     }
     //
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 100;
 
     window.addEventListener("resize", onWindowResize);
+    
+    isInitializing = false;
+    } catch (error) {
+        console.error("Error in customModelInit:", error);
+        isInitializing = false;
+        cleanup();
+        throw error;
+    }
 }
 
 async function init(model, vmd, audio, cameraFiles) {
     console.log(cameraFiles);
+
+    if (isInitializing) {
+        console.warn("Already initializing");
+        return;
+    }
+
+    isInitializing = true;
+
+    try {
 
     document.getElementById(
         "info-text"
@@ -517,14 +671,24 @@ async function init(model, vmd, audio, cameraFiles) {
     }
     //
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 100;
 
     window.addEventListener("resize", onWindowResize);
+    
+    isInitializing = false;
+    } catch (error) {
+        console.error("Error in init:", error);
+        isInitializing = false;
+        cleanup();
+        throw error;
+    }
 }
 
 function onWindowResize() {
+    if (!camera || !effect) return;
+    
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
