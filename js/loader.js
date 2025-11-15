@@ -41,10 +41,12 @@ export function createProgressCallback(vmd, cameraFiles) {
             }
             console.log(Math.round(percentComplete, 2) + "% downloaded");
             if (percentComplete >= 100) {
+                const enableCameraCheckbox = document.getElementById("enable-camera");
                 let vmdLength =
                     vmd.length +
                     (cameraFiles != false &&
-                    document.getElementById("enable-camera").checked
+                    enableCameraCheckbox &&
+                    enableCameraCheckbox.checked
                         ? 1
                         : 0);
                 if (count < vmdLength) {
@@ -52,7 +54,9 @@ export function createProgressCallback(vmd, cameraFiles) {
                     count++;
                 } else {
                     const overlay = document.getElementById("overlay");
-                    overlay.remove();
+                    if (overlay) {
+                        overlay.remove();
+                    }
                 }
             }
         }
