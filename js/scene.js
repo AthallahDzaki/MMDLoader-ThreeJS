@@ -145,6 +145,21 @@ export function initializeSceneWithManager(files) {
 
     manager.setURLModifier((url) => {
         console.log("Old URL", url);
+        console.log("Files :", files);
+
+        // Ekstrak filename dari URL terlebih dahulu
+        const fileName = url.includes("/") ? url.split("/").pop() : url;
+        console.log("Looking for:", fileName);
+
+        // Cari di array files
+        const result = files.find(obj => obj.name === fileName);
+        console.log(url, result);
+
+        if(!result) {
+            console.log("Returned URL When Not Loaded :", url);
+            return url;
+        }
+
         if (/tex(ture(s)?)?/gi.test(url) || /sph/gi.test(url) || /Toon/gi.test(url) || /s/gi.test(url))  {
             url = url.replace(String.fromCharCode(92), String.fromCharCode(47));
             let index = url.lastIndexOf("/") + 1;
@@ -172,7 +187,11 @@ export function initializeSceneWithManager(files) {
 
     // Load stage
     const stageConfig = getStageConfig();
+    console.log("Stage Config : ", stageConfig);
+    debugger;
     if (stageConfig.isCustom && stageConfig.files.length > 0) {
+        console.log("Load Stage");
+        debugger;
         // Load custom stage using the same manager
         const stageFile = Array.from(stageConfig.files).find(
             (e) => e.name.includes(".pmx") || e.name.includes(".pmd") || e.name.includes(".x")
@@ -184,7 +203,7 @@ export function initializeSceneWithManager(files) {
                     state.scene.add(mesh);
                 },
                 function (xhr) {
-                    console.log((xhr.loaded / xhr.total) * 100 + "% stage loaded");
+                    console.log("Stage Loader:", (xhr.loaded / xhr.total) * 100 + "% stage loaded");
                 },
                 null
             );
