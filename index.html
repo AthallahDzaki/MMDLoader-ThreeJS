@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Athallah - ThreeJS - MMDLoader</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css?v=1.1">
+	<style>
+		body {
+			color: #444;
+			background: #fff;
+		}
+
+		a {
+			color: #08f;
+		}
+
+		@media only screen and (max-width: 375px) {
+			input#custom-model {
+				margin: 0 auto;
+				width: 34%;
+			}
+
+			select#animation {
+				margin: 0 auto;
+				width: 40%;
+			}
+		}
+
+		@media only screen and (max-width: 768px) {
+			input#custom-model {
+				margin: 0 auto;
+				width: 50%;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div id="overlay">
+		<button id="startButton">Play</button>
+		<form>
+			<label for="model" class="info-text">Choose a model:</label>
+			<select name="model" id="model">
+				<option value="CJ">CJ</option>
+				<option value="Miku">Hatsune Miku</option>
+				<option value="Gumi">Gumi NSFW</option>
+				<option value="Custom">Custom</option>
+			</select>
+		</form>
+		<form id="custom-model-form" hidden>
+			<label for="custom-model" class="info-text">Upload Your Model:</label>
+			<input class="info-text" name="custom-model" type="file" id="custom-model" multiple />
+		</form>
+		<form>
+			<label for="animation" class="info-text">Choose a Animation:</label>
+			<select name="animation" id="animation">
+				<option value="kewerkewer">Kewer-Kewer Dance</option>
+				<option value="yoasobi">Yoasobi Dance</option>
+				<option value="yoasobi">Yoasobi Dance V2</option>
+				<option value="heavyrotation">Heavy Rotation</option>
+				<option value="custom">Custom</option>
+			</select>
+		</form>
+		<form id="custom-animation-form" hidden>
+			<label for="custom-animation" class="info-text">Upload Your Animation:</label>
+			<input class="info-text" name="custom-animation" type="file" id="custom-animation" multiple />
+		</form>
+		<form>
+			<input type="checkbox" id="enable-camera">
+			<label for="enable-camera" class="info-text"> Enable Camera</label><br>
+		</form>
+		<div id="info-text" class="info-text">
+
+		</div>
+	</div>
+
+	<script src="js/ammo.wasm.js"></script>
+
+	<script type="importmap">
+          {
+            "imports": {
+              "three": "https://cdn.jsdelivr.net/npm/three@0.167.0/build/three.module.js",
+              "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.0/examples/jsm/"
+            }
+          }
+        </script>
+
+	<script>
+		document.getElementById('model').onchange = (event) => {
+			if (event.target.value == "Custom") {
+				document.getElementById("custom-model-form").hidden = false;
+			} else {
+				document.getElementById("custom-model-form").hidden = true;
+			}
+
+		}
+
+		const params = new Proxy(new URLSearchParams(window.location.search), {
+			get: (searchParams, prop) => searchParams.get(prop),
+		});
+
+		function isDeviceMobile() {
+			let isMobile = window.matchMedia || window.msMatchMedia;
+			if (isMobile) {
+				let match_mobile = isMobile("(pointer:coarse)");
+				return match_mobile.matches;
+			}
+			return false;
+		}
+	</script>
+
+	<script type="module" src="js/index.js"></script>
+
+</body>
+
+</html>
