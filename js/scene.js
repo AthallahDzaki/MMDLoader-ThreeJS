@@ -10,8 +10,48 @@ import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
 import { MMDAnimationHelper } from "three/addons/animation/MMDAnimationHelper.js";
 
 import { state } from "./state.js";
-import { stagePath } from "./config.js";
+import { stagePath, lightingPresets } from "./config.js";
 import { onWindowResize } from "./cleanup.js";
+
+/**
+ * Get lighting configuration
+ */
+function getLightingConfig() {
+    const lightingSelect = document.getElementById("lighting");
+    const lightingValue = lightingSelect.value;
+
+    if (lightingValue === "custom") {
+        const ambientColor = document.getElementById("ambient-color").value;
+        const ambientIntensity = parseFloat(document.getElementById("ambient-intensity").value);
+        const directionalColor = document.getElementById("directional-color").value;
+        const directionalIntensity = parseFloat(document.getElementById("directional-intensity").value);
+
+        return {
+            ambient: { 
+                color: parseInt(ambientColor.replace('#', '0x')), 
+                intensity: ambientIntensity 
+            },
+            directional: { 
+                color: parseInt(directionalColor.replace('#', '0x')), 
+                intensity: directionalIntensity 
+            }
+        };
+    }
+
+    return lightingPresets[lightingValue] || lightingPresets.default;
+}
+
+/**
+ * Get stage path (default or custom)
+ */
+function getStageConfig() {
+    const stageSelect = document.getElementById("stage");
+    if (stageSelect.value === "custom") {
+        const customStageInput = document.getElementById("custom-stage");
+        return { isCustom: true, files: customStageInput.files };
+    }
+    return { isCustom: false, path: stagePath };
+}
 
 /**
  * Initialize basic scene, camera, and renderer
@@ -36,26 +76,32 @@ export function initializeScene() {
     state.scene.background = new THREE.Color(0xffffff);
 
     // Load stage
-    const loader = new MMDLoader();
-    loader.load(
-        stagePath,
-        function (mesh) {
-            state.scene.add(mesh);
-        },
-        function (xhr) {
-            console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-        },
-        null
-    );
+    const stageConfig = getStageConfig();
+    if (!stageConfig.isCustom) {
+        const loader = new MMDLoader();
+        loader.load(
+            stageConfig.path,
+            function (mesh) {
+                state.scene.add(mesh);
+            },
+            function (xhr) {
+                console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+            },
+            null
+        );
+    }
 
     const listener = new THREE.AudioListener();
     state.camera.add(listener);
     state.scene.add(state.camera);
 
-    const ambient = new THREE.AmbientLight(0xaaaaaa, 3);
+    // Apply lighting configuration
+    const lighting = getLightingConfig();
+    
+    const ambient = new THREE.AmbientLight(lighting.ambient.color, lighting.ambient.intensity);
     state.scene.add(ambient);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    const directionalLight = new THREE.DirectionalLight(lighting.directional.color, lighting.directional.intensity);
     directionalLight.position.set(-1, 1, 1).normalize();
     state.scene.add(directionalLight);
 
@@ -125,25 +171,48 @@ export function initializeSceneWithManager(files) {
     state.scene.background = new THREE.Color(0xffffff);
 
     // Load stage
-    loader.load(
-        stagePath,
-        function (mesh) {
-            state.scene.add(mesh);
-        },
-        function (xhr) {
-            console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-        },
-        null
-    );
+    const stageConfig = getStageConfig();
+    if (stageConfig.isCustom && stageConfig.files.length > 0) {
+        // Load custom stage using the same manager
+        const stageFile = Array.from(stageConfig.files).find(
+            (e) => e.name.includes(".pmx") || e.name.includes(".pmd") || e.name.includes(".x")
+        );
+        if (stageFile) {
+            loader.load(
+                stageFile.name,
+                function (mesh) {
+                    state.scene.add(mesh);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total) * 100 + "% stage loaded");
+                },
+                null
+            );
+        }
+    } else {
+        loader.load(
+            stagePath,
+            function (mesh) {
+                state.scene.add(mesh);
+            },
+            function (xhr) {
+                console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+            },
+            null
+        );
+    }
 
     const listener = new THREE.AudioListener();
     state.camera.add(listener);
     state.scene.add(state.camera);
 
-    const ambient = new THREE.AmbientLight(0xaaaaaa, 3);
+    // Apply lighting configuration
+    const lighting = getLightingConfig();
+    
+    const ambient = new THREE.AmbientLight(lighting.ambient.color, lighting.ambient.intensity);
     state.scene.add(ambient);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    const directionalLight = new THREE.DirectionalLight(lighting.directional.color, lighting.directional.intensity);
     directionalLight.position.set(-1, 1, 1).normalize();
     state.scene.add(directionalLight);
 

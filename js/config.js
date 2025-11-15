@@ -51,3 +51,29 @@ export const cameraPath = [
 ];
 
 export const stagePath = "model/stage/EPT.pmx";
+
+/**
+ * Lighting presets
+ */
+export const lightingPresets = {
+    default: {
+        ambient: { color: 0xaaaaaa, intensity: 3 },
+        directional: { color: 0xffffff, intensity: 3 }
+    },
+    bright: {
+        ambient: { color: 0xffffff, intensity: 4 },
+        directional: { color: 0xffffff, intensity: 4 }
+    },
+    dark: {
+        ambient: { color: 0x555555, intensity: 1.5 },
+        directional: { color: 0xaaaaaa, intensity: 2 }
+    },
+    warm: {
+        ambient: { color: 0xffddaa, intensity: 3 },
+        directional: { color: 0xffeecc, intensity: 3 }
+    },
+    cool: {
+        ambient: { color: 0xaaddff, intensity: 3 },
+        directional: { color: 0xccddff, intensity: 3 }
+    }
+};

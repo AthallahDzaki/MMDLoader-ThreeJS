@@ -68,6 +68,39 @@
 			<input class="info-text" name="custom-animation" type="file" id="custom-animation" multiple />
 		</form>
 		<form>
+			<label for="stage" class="info-text">Choose a Stage:</label>
+			<select name="stage" id="stage">
+				<option value="default">Default Stage</option>
+				<option value="custom">Custom Stage</option>
+			</select>
+		</form>
+		<form id="custom-stage-form" hidden>
+			<label for="custom-stage" class="info-text">Upload Your Stage:</label>
+			<input class="info-text" name="custom-stage" type="file" id="custom-stage" multiple />
+		</form>
+		<form>
+			<label for="lighting" class="info-text">Lighting Preset:</label>
+			<select name="lighting" id="lighting">
+				<option value="default">Default</option>
+				<option value="bright">Bright</option>
+				<option value="dark">Dark</option>
+				<option value="warm">Warm</option>
+				<option value="cool">Cool</option>
+				<option value="custom">Custom</option>
+			</select>
+		</form>
+		<form id="custom-lighting-form" hidden>
+			<label for="ambient-color" class="info-text">Ambient Color:</label>
+			<input type="color" id="ambient-color" value="#aaaaaa" />
+			<label for="ambient-intensity" class="info-text">Ambient Intensity:</label>
+			<input type="range" id="ambient-intensity" min="0" max="5" step="0.1" value="3" />
+			<br>
+			<label for="directional-color" class="info-text">Directional Color:</label>
+			<input type="color" id="directional-color" value="#ffffff" />
+			<label for="directional-intensity" class="info-text">Directional Intensity:</label>
+			<input type="range" id="directional-intensity" min="0" max="5" step="0.1" value="3" />
+		</form>
+		<form>
 			<input type="checkbox" id="enable-camera">
 			<label for="enable-camera" class="info-text"> Enable Camera</label><br>
 		</form>
@@ -94,7 +127,30 @@
 			} else {
 				document.getElementById("custom-model-form").hidden = true;
 			}
+		}
 
+		document.getElementById('animation').onchange = (event) => {
+			if (event.target.value == "custom") {
+				document.getElementById("custom-animation-form").hidden = false;
+			} else {
+				document.getElementById("custom-animation-form").hidden = true;
+			}
+		}
+
+		document.getElementById('stage').onchange = (event) => {
+			if (event.target.value == "custom") {
+				document.getElementById("custom-stage-form").hidden = false;
+			} else {
+				document.getElementById("custom-stage-form").hidden = true;
+			}
+		}
+
+		document.getElementById('lighting').onchange = (event) => {
+			if (event.target.value == "custom") {
+				document.getElementById("custom-lighting-form").hidden = false;
+			} else {
+				document.getElementById("custom-lighting-form").hidden = true;
+			}
 		}
 
 		const params = new Proxy(new URLSearchParams(window.location.search), {
